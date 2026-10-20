@@ -596,6 +596,22 @@ def pp_timers_list(campus_id):
     return jsonify([{"name": t["id"]["name"], "uuid": t["id"]["uuid"]} for t in timers])
 
 
+@app.route("/api/campus/<campus_id>/pp-status", methods=["GET"])
+def pp_status(campus_id):
+    """Report whether this campus's ProPresenter API is reachable."""
+    if not _valid_campus(campus_id):
+        return jsonify({"error": "Not found"}), 404
+    host, port = _pp_base(campus_id)
+    if not host:
+        return jsonify({"configured": False, "connected": False})
+    info, status = _pp_json_request("GET", f"http://{host}:{port}/version")
+    connected = status == 200
+    result = {"configured": True, "connected": connected, "host": host, "port": port}
+    if connected and isinstance(info, dict) and info.get("name"):
+        result["name"] = info["name"]
+    return jsonify(result)
+
+
 @app.route("/api/campus/<campus_id>/stage-message", methods=["GET"])
 def pp_stage_message_get(campus_id):
     host, port = _pp_base(campus_id)
