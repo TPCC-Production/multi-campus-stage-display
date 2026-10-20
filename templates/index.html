@@ -739,6 +739,21 @@
       <button class="btn-save" onclick="saveConfig()">Save Settings</button>
       <span class="status-msg" id="status-config"></span>
     </div>
+
+    <!-- Import / Export -->
+    <div class="admin-card" style="margin-top:2rem;">
+      <h2>Import / Export</h2>
+      <p style="color:var(--text-muted);font-size:.9rem;margin:0;">
+        Export downloads a JSON file with all campus settings plus the current notes and schedules.
+        Importing a file replaces the current settings and notes with its contents.
+      </p>
+      <div class="admin-footer">
+        <a class="btn-secondary" href="/api/export" download style="text-decoration:none;">Export JSON</a>
+        <button class="btn-secondary" onclick="document.getElementById('importFile').click()">Import JSON…</button>
+        <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importConfig(this)">
+        <span class="status-msg" id="status-import"></span>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -1116,6 +1131,34 @@
       setTimeout(() => location.reload(), 800);
     } else {
       flash('status-config', 'Error saving', true);
+    }
+  }
+
+  async function importConfig(input) {
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!confirm(`Import "${file.name}"?\n\nThis replaces current campus settings and notes.`)) return;
+
+    let body;
+    try {
+      body = JSON.parse(await file.text());
+    } catch {
+      flash('status-import', 'File is not valid JSON', true);
+      return;
+    }
+
+    const r = await fetch('/api/import', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    const res = await r.json().catch(() => ({}));
+    if (r.ok) {
+      flash('status-import', 'Imported — reloading…');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      flash('status-import', res.error || 'Import failed', true);
     }
   }
 
