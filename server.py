@@ -31,6 +31,12 @@ DATA_FILE     = DATA_DIR / "data.json"
 
 _lock = threading.Lock()
 
+# Seed a fresh data dir (e.g. an empty Docker volume) with the bundled default config
+_bundled_campuses = Path(__file__).parent / "campuses.json"
+if not CAMPUSES_FILE.exists() and _bundled_campuses.exists():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    CAMPUSES_FILE.write_text(_bundled_campuses.read_text())
+
 
 # ── Config helpers ────────────────────────────────────────────────────────────
 
